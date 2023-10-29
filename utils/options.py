@@ -44,7 +44,7 @@ class FaceDancerOptions():
                                  help='Path to output manipulated video.')
         self.parser.add_argument('--img_output', type=str, default="results/swapped_image.jpg",
                                  help='Path to output manipulated image.')
-        self.parser.add_argument('--align_source', type=str2bool, default=True, const=True, nargs='?',
+        self.parser.add_argument('--align_source', type=str2bool, default=False, const=True, nargs='?',
                                  help='If true, detects the face and aligns it before extracting identity.')
 
 
