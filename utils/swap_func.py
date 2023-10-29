@@ -47,29 +47,40 @@ def run_inference(opt, source, target, RetinaFace,
         im_h, im_w, _ = im.shape
         im_shape = (im_w, im_h)
 
-        detection_scale = (im_w // 640) if (im_w > 640) else 1
-        faces = RetinaFace(np.expand_dims(cv2.resize(im,
+        if opt.align_source:
+            detection_scale = (im_w // 640) if (im_w > 640) else 1
+            faces = RetinaFace(np.expand_dims(cv2.resize(im,
                                                      (im_w // detection_scale,
                                                       im_h // detection_scale)), axis=0)).numpy()
+        else:
+          faces = [None]
+        
         total_img = im / 255.0
 
         for annotation in faces:
-            lm_align = get_lm(annotation, im_w, im_h)
+            if opt.align_source:
+                lm_align = get_lm(annotation, im_w, im_h)
 
-            # align the detected face
-            M, pose_index = estimate_norm(lm_align, 256, "arcface", shrink_factor=1.0)
-            im_aligned = cv2.warpAffine(im, M, (256, 256), borderValue=0.0)
+                # align the detected face
+                M, pose_index = estimate_norm(lm_align, 256, "arcface", shrink_factor=1.0)
+                im_aligned = cv2.warpAffine(im, M, (256, 256), borderValue=0.0)
+            else:
+                assert im_shape[0] == 256 and im_shape[1] == 256
+                img_aligned = im
 
             # face swap
             face_swap = FaceDancer.predict([np.expand_dims((im_aligned - 127.5) / 127.5, axis=0), source_z])
             face_swap = (face_swap[0] + 1) / 2
 
-            # get inverse transformation landmarks
-            transformed_lmk = transform_landmark_points(M, lm_align)
+            if opt.align_source:
+                # get inverse transformation landmarks
+                transformed_lmk = transform_landmark_points(M, lm_align)
 
-            # warp image back
-            iM, _ = inverse_estimate_norm(lm_align, transformed_lmk, 256, "arcface", shrink_factor=1.0)
-            iim_aligned = cv2.warpAffine(face_swap, iM, im_shape, borderValue=0.0)
+                # warp image back
+                iM, _ = inverse_estimate_norm(lm_align, transformed_lmk, 256, "arcface", shrink_factor=1.0)
+                iim_aligned = cv2.warpAffine(face_swap, iM, im_shape, borderValue=0.0)
+            else:
+                iim_aligned = face_swap
 
             # blend swapped face with target image
             blend_mask = cv2.warpAffine(blend_mask_base, iM, im_shape, borderValue=0.0)
