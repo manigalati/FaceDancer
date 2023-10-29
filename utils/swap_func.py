@@ -79,14 +79,11 @@ def run_inference(opt, source, target, RetinaFace,
                 # warp image back
                 iM, _ = inverse_estimate_norm(lm_align, transformed_lmk, 256, "arcface", shrink_factor=1.0)
                 iim_aligned = cv2.warpAffine(face_swap, iM, im_shape, borderValue=0.0)
+                blend_mask = cv2.warpAffine(blend_mask_base, iM, im_shape, borderValue=0.0)
+
+                total_img = (iim_aligned * blend_mask + total_img * (1 - blend_mask))
             else:
-                iim_aligned = face_swap
-
-            # blend swapped face with target image
-            blend_mask = cv2.warpAffine(blend_mask_base, iM, im_shape, borderValue=0.0)
-            blend_mask = np.expand_dims(blend_mask, axis=-1)
-
-            total_img = (iim_aligned * blend_mask + total_img * (1 - blend_mask))
+                total_img = (face_swap * blend_mask_base + total_img * (1 - blend_mask_base))
 
         total_img = np.clip(total_img * 255, 0, 255).astype('uint8')
 
