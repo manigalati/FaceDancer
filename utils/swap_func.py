@@ -66,7 +66,7 @@ def run_inference(opt, source, target, RetinaFace,
                 im_aligned = cv2.warpAffine(im, M, (256, 256), borderValue=0.0)
             else:
                 assert im_shape[0] == 256 and im_shape[1] == 256
-                img_aligned = im
+                im_aligned = im
 
             # face swap
             face_swap = FaceDancer.predict([np.expand_dims((im_aligned - 127.5) / 127.5, axis=0), source_z])
